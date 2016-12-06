@@ -1,11 +1,11 @@
 <?php
 const BASE_URL = 'https://del.icio.us';
-const USERNAME = 'jacknumber';
 
 class ScrapDelicious
 {
     private $ajax;
     private $output;
+    public $username;
     public $page;
     public $total_pages;
     public $warnings = [];
@@ -20,6 +20,10 @@ class ScrapDelicious
 
     public function init()
     {
+        if (isset($_GET['username'])) {
+            $this->username = strtolower($_GET['username']);
+        }
+
         if (isset($_GET['page'])) {
             $this->page = $_GET['page'];
         }
@@ -41,23 +45,34 @@ class ScrapDelicious
             $args = '/?' . implode('&', $args);
         }
 
-        $this->source_url = BASE_URL . '/' . USERNAME . $args;
+        $this->source_url = BASE_URL . '/' . $this->username . $args;
 
-        if ($this->ajax) {
-            $this->fetchDataAjax();
-        } else {
-            $this->fetchData();
+        if ($this->username) {
+            if ($this->ajax) {
+                $this->fetchDataAjax();
+            } else {
+                $this->fetchData();
+            }
         }
     }
 
     public function fetchData()
     {
         if ($this->page == 'all') {
+
             for ($i = 1; $i <= $_GET['total']; $i++) {
                 $source_test = $this->source_url . '?page=' . $i;
                 $this->bookmarks = array_merge($this->bookmarks, $this->getPageData($source_test));
             }
         } else {
+            $headers = get_headers($this->source_url);
+            $http_code = substr($headers[0], 9, 3);
+
+            if ($http_code != 200) {
+                $this->errors[] = 'The user <b>' . $this->username . '</b> doesn\'t exists or has been deleted.';
+                return;
+            }
+
             $this->bookmarks = array_merge($this->bookmarks, $this->getPageData($this->source_url));
         }
 
@@ -80,7 +95,7 @@ class ScrapDelicious
             }
 
             $date = $item->find('.articleInfoPan', 0)->children(2)->plaintext;
-            $date = str_replace('This link recently saved by ' . USERNAME . ' on ', '', $date);
+            $date = str_replace('This link recently saved by ' . $this->username . ' on ', '', $date);
             $date = new DateTime($date);
             $date = $date->getTimestamp();
 
@@ -116,7 +131,7 @@ $bookmarks = $scrap->bookmarks;
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/flatly/bootstrap.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        .bookmark {margin-top: 20px;}
+        .container, .bookmark {margin-top: 20px;}
     </style>
 </head>
 <body>
@@ -136,6 +151,23 @@ $bookmarks = $scrap->bookmarks;
             echo '</div>';
         }
     ?>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Scrap Delicious</h3>
+        </div>
+        <div class="panel-body form-inline">
+            <form method="get">
+                <div class="form-group">
+                  <label for="username">Username</label>
+                  <input type="text" name="username" id="username" placeholder="eg: jacknumber" class="form-control" value="<?php echo $scrap->username ?>">
+                  <button type="submit" class="btn btn-primary">Fetch</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <?php if (!$scrap->username) { return; } ?>
+
 
     <nav class="navbar navbar-default">
         <ul class="nav navbar-nav">
@@ -172,7 +204,7 @@ $bookmarks = $scrap->bookmarks;
     <?php } ?>
 </div>
 <form action="download.php" method="post" class="form-download">
-    <input type="hidden" name="username" value="<?php echo USERNAME ?>">
+    <input type="hidden" name="username" value="<?php echo $scrap->username ?>">
     <input type="hidden" name="type" class="input-type">
     <input type="hidden" name="bookmarks" value="<?php echo htmlentities(serialize($bookmarks)) ?>">
 </form>
