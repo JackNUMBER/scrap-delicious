@@ -132,6 +132,12 @@ $bookmarks = $scrap->bookmarks;
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         .container, .bookmark {margin-top: 20px;}
+        .loader {color: #c0c0c0;animation: loader 1s linear infinite;margin-right: 5px;-webkit-transform: translateZ(0);}
+        .result-ajax .glyphicon {vertical-align:top;}
+        @keyframes loader {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -173,6 +179,7 @@ $bookmarks = $scrap->bookmarks;
         <ul class="nav navbar-nav">
             <li><a href="<?php echo $scrap->source_url ?>" target="_blank">Source</a></li>
             <li><a href="?page=all&total=<?php echo $scrap->total_pages ?>">Fetch all pages</a></li>
+            <li><a href="#" class="btn-fetchall">Fetch all (ajax)</a></li>
             <li><a href="#" class="btn-download" data-type="html1">Get HTML type 1</a></li>
         </ul>
     </nav>
@@ -186,6 +193,7 @@ $bookmarks = $scrap->bookmarks;
         Bookmarks scrapped: <b><?php echo count($bookmarks) ?></b>
     </p>
 
+    <div class="result-ajax"></div>
 
     <?php foreach ($bookmarks as $bookmark) { ?>
         <p class="bookmark">
@@ -216,6 +224,37 @@ $(document).ready(function() {
         var type = $(this).attr('data-type');
         $('.form-download .input-type').val(type);
         $('.form-download').submit();
+    });
+
+    $('.btn-fetchall').click(function(){
+        function recursiveAjax(){
+            $.ajax({
+                url: 'ajax.php?username=jacknumber&page=' + counter,
+                dataType: 'json',
+                success: function(result){
+                    console.log(result);
+                    counter++;
+                    $('.current-scrap').text(counter);
+
+                    if (result.message == 'ok' && counter <= total_pages){
+                        recursiveAjax();
+                    } else if (result.message == 'error') {
+                        $('.result-ajax').html('<span class="glyphicon glyphicon-remove text-danger"></span> Error<br>' + result.errors.join('<br>'));
+                    } else if (counter >= total_pages) {
+                        $('.result-ajax').html('<span class="glyphicon glyphicon-ok text-success"></span> Finish');
+                    }
+                }
+            });
+        }
+
+        var loader = '<span class="glyphicon glyphicon-repeat loader"></span>',
+            counter = 1,
+            total_pages = <?php echo $scrap->total_pages ?>;
+
+        $('.bookmark').fadeOut();
+        $('.result-ajax').html(loader + ' Scrapping page <span class="current-scrap">1</span> / ' + total_pages).addClass('text-center h4');
+
+        recursiveAjax();
     });
 });
 </script>
