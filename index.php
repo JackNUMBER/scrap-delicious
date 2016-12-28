@@ -1,130 +1,3 @@
-<?php
-const BASE_URL = 'https://del.icio.us';
-
-class ScrapDelicious
-{
-    private $ajax;
-    private $output;
-    public $username;
-    public $page;
-    public $total_pages;
-    public $warnings = [];
-    public $errors = [];
-    public $bookmarks = [];
-    public $source_url = [];
-
-    public function __construct()
-    {
-        include('simple_html_dom.php');
-    }
-
-    public function init()
-    {
-        if (isset($_GET['username'])) {
-            $this->username = strtolower($_GET['username']);
-        }
-
-        if (isset($_GET['page'])) {
-            $this->page = $_GET['page'];
-        }
-
-        if (isset($_GET['output'])) {
-            $this->output = $_GET['output'];
-        }
-
-        if (isset($_GET['ajax'])) {
-            $this->ajax = $_GET['ajax'];
-        }
-
-        $args = '';
-        if ($this->page && $this->page != 'all') {
-            $args = [];
-            $args[] = 'page=' . $this->page;
-        }
-        if (!empty($args)) {
-            $args = '/?' . implode('&', $args);
-        }
-
-        $this->source_url = BASE_URL . '/' . $this->username . $args;
-
-        if ($this->username) {
-            if ($this->ajax) {
-                $this->fetchDataAjax();
-            } else {
-                $this->fetchData();
-            }
-        }
-    }
-
-    public function fetchData()
-    {
-        if ($this->page == 'all') {
-
-            for ($i = 1; $i <= $_GET['total']; $i++) {
-                $source_test = $this->source_url . '?page=' . $i;
-                $this->bookmarks = array_merge($this->bookmarks, $this->getPageData($source_test));
-            }
-        } else {
-            $headers = get_headers($this->source_url);
-            $http_code = substr($headers[0], 9, 3);
-
-            if ($http_code != 200) {
-                $this->errors[] = 'The user <b>' . $this->username . '</b> doesn\'t exists or has been deleted.';
-                return;
-            }
-
-            $this->bookmarks = array_merge($this->bookmarks, $this->getPageData($this->source_url));
-        }
-
-        // var_dump($this->bookmarks);
-    }
-
-    private function getPageData($url)
-    {
-        $page_data = [];
-
-        $source = file_get_html($url);
-
-        $items = $source->find('.articleThumbBlockOuter');
-        $this->total_pages = $source->find('.pagination', 0)->children((count($source->find('.pagination li')) - 2))->plaintext;
-
-        foreach ($items as $item) {
-            $description = null;
-            if ($item->find('.thumbTBriefTxt', 0)->children(2)) {
-                $description = $item->find('.thumbTBriefTxt', 0)->children(2)->plaintext;
-            }
-
-            $date = $item->find('.articleInfoPan', 0)->children(2)->plaintext;
-            $date = str_replace('This link recently saved by ' . $this->username . ' on ', '', $date);
-            $date = new DateTime($date);
-            $date = $date->getTimestamp();
-
-            $tags = [];
-            foreach ($item->find('.tagName li') as $tag) {
-                $tags[] = $tag->plaintext;
-            }
-
-            $page_data[] = [
-                'title'       => $item->find('h3', 0)->plaintext,
-                'url'         => $item->find('.articleInfoPan', 0)->children(0)->find('a', 0)->href,
-                'domain'      => $item->find('.articleInfoPan', 0)->children(1)->plaintext,
-                'date'        => $date,
-                'description' => $description,
-                'tags'        => $tags,
-            ];
-        }
-
-        return $page_data;
-    }
-}
-
-$scrap = new ScrapDelicious();
-$scrap->init();
-$warnings = $scrap->warnings;
-$errors = $scrap->errors;
-$bookmarks = $scrap->bookmarks;
-?>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -132,8 +5,10 @@ $bookmarks = $scrap->bookmarks;
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         .container, .bookmark {margin-top: 20px;}
-        .loader {color: #c0c0c0;animation: loader 1s linear infinite;margin-right: 5px;-webkit-transform: translateZ(0);}
-        .result-ajax .glyphicon {vertical-align:top;}
+        .loader {color: #c0c0c0;animation: loader 1s linear infinite;-webkit-transform: translateZ(0);}
+        .btn-primary .loader {color: #fff;margin: 0;}
+        .result-ajax .glyphicon {vertical-align: top;margin-right: 5px;}
+        .download-buttons {margin-top: 15px;}
         @keyframes loader {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -142,119 +17,197 @@ $bookmarks = $scrap->bookmarks;
 </head>
 <body>
 <div class="container">
-    <?php
-        if ($warnings) {
-            echo '<div class="alert alert-warning" role="alert">';
-            echo implode('<br>', $warnings);
-            echo '</div>';
-        }
-    ?>
-
-    <?php
-        if ($errors) {
-            echo '<div class="alert alert-danger" role="alert">';
-            echo implode('<br>', $errors);
-            echo '</div>';
-        }
-    ?>
 
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Scrap Delicious</h3>
         </div>
         <div class="panel-body form-inline">
-            <form method="get">
-                <div class="form-group">
-                  <label for="username">Username</label>
-                  <input type="text" name="username" id="username" placeholder="eg: jacknumber" class="form-control" value="<?php echo $scrap->username ?>">
-                  <button type="submit" class="btn btn-primary">Fetch</button>
-                </div>
+            <form method="get" class="js-form-fetch" data-fetch-type="page" data-fetch-page="1">
+                <fieldset>
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" name="username" id="username" placeholder="eg: jacknumber" class="form-control" required value="jacknumber_graph">
+                        <button type="submit" class="btn btn-primary">Fetch</button>
+                    </div>
+                </fieldset>
             </form>
+            <button class="btn js-stoploop">Stop</button>
         </div>
     </div>
-    <?php if (!$scrap->username) { return; } ?>
 
-
-    <nav class="navbar navbar-default">
-        <ul class="nav navbar-nav">
-            <li><a href="<?php echo $scrap->source_url ?>" target="_blank">Source</a></li>
-            <li><a href="?page=all&total=<?php echo $scrap->total_pages ?>">Fetch all pages</a></li>
-            <li><a href="#" class="btn-fetchall">Fetch all (ajax)</a></li>
-            <li><a href="#" class="btn-download" data-type="html1">Get HTML type 1</a></li>
-        </ul>
-    </nav>
-
-    <p>
-        Total pages: <?php echo $scrap->total_pages ?>
-        <?php if ($scrap->page) {?>
-         / Current: <b><?php echo $scrap->page ?></b>
-        <?php } ?>
-        <br>
-        Bookmarks scrapped: <b><?php echo count($bookmarks) ?></b>
-    </p>
-
+    <div class="alert alert-danger js-error-panel hidden" role="alert"></div>
     <div class="result-ajax"></div>
+    <div class="result-ajax">
+        <!-- Scrapping -->
+        <div class="js-state-scrap text-center">
+            <div class="h4">
+                <span class="glyphicon glyphicon-repeat loader"></span> Scrapping page <span class="js-current-page">x</span> / <span class="js-total-page">x</span>
+            </div>
+        </div>
+        <!-- Success -->
+        <div class="js-state-success text-center">
+            <div class="h4">
+                <span class="glyphicon glyphicon-ok text-success"></span> Finish
+            </div>
+            <div class="js-error-message">
+                <span class="js-bookmarks-scrapped">x</span> bookmarks scrapped
+            </div>
+        </div>
+        <!-- Error -->
+        <div class="js-state-error text-center">
+            <div class="h4">
+                <span class="glyphicon glyphicon-remove text-danger"></span> Error
+            </div>
+            <div>
+                An error occured.
+            </div>
+        </div>
+        <!-- Stopped -->
+        <div class="js-state-stop text-center">
+            <div class="h4">
+                <span class="glyphicon glyphicon-indent-left text-warning"></span> Interrupted
+            </div>
+            <div>You have stopped the process but you can still download the <span class="js-bookmarks-scrapped">x</span> scrapped bookmarks:</div>
+        </div>
+        <!-- Buttons -->
+        <div class="text-center download-buttons js-download-buttons">
+            <button class="btn btn-primary js-btn-download" data-fetch-type="html1" rel="tooltip" data-placement="top" title="Firefox, Pocket">HTML Type 1</button>
+            <button class="btn btn-primary js-btn-download hidden" data-fetch-type="html2" rel="tooltip" data-placement="top" title="">HTML Type 2</button>
+            <button class="btn btn-primary js-btn-download hidden" data-fetch-type="json" rel="tooltip" data-placement="top" title="">JSON</button>
+            <br><a href="https://github.com/JackNUMBER/scrap-delicious"><small>Need more help?</a></small>
+        </div>
+    </div>
 
-    <?php foreach ($bookmarks as $bookmark) { ?>
-        <p class="bookmark">
-            <span class="h5"><span class="glyphicon glyphicon-bookmark text-info"></span>
-            <b><a href="<?php echo $bookmark['url'] ?>" title="<?php echo $bookmark['url'] ?>"><?php echo $bookmark['title'] ?></a></b>
-            <small><?php echo $bookmark['domain']?></small></span><br>
-            <?php if ($bookmark['description']) { ?>
-                <?php echo $bookmark['description'] ?><br>
-            <?php } ?>
-            &nbsp;
-            <?php foreach ($bookmark['tags'] as $tag) { ?>
-                <span class="label label-default"><?php echo $tag ?></span>
-
-            <?php } ?>
-        </p>
-    <?php } ?>
-</div>
-<form action="download.php" method="post" class="form-download">
-    <input type="hidden" name="username" value="<?php echo $scrap->username ?>">
-    <input type="hidden" name="type" class="input-type">
-    <input type="hidden" name="bookmarks" value="<?php echo htmlentities(serialize($bookmarks)) ?>">
-</form>
 <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <script>
-$(document).ready(function() {
+$(function () {
+    $("[rel='tooltip']").tooltip();
+
+    var fetch_form = $('.js-form-fetch'),
+        error_panel = $('.js-error-panel'),
+        loader = '<span class="glyphicon glyphicon-repeat loader"></span>',
+        total_pages,
+        scrapped_bookmarks = 0,
+        loop_state,
+        user;
+
+    function fetchPage(username, page){
+        var current_page = page ? page : 1;
+        error_panel.addClass('hidden');
+
+        $.ajax({
+            url: 'ajax.php?username=' + username + '&page=' + current_page,
+            dataType: 'json',
+            success: function(result) {
+                console.log('success', result);
+                fetchSuccess(result);
+            },
+            error: function(result) {
+                console.log('error', result);
+                fetchError(result);
+            }
+        });
+    }
+
+    function toggleAbleForm() {
+        console.log('toggleAbleForm()', fetch_form.find('fieldset'));
+        if (fetch_form.find('fieldset').attr('disabled')) {
+            fetch_form.find('fieldset').removeAttr('disabled');
+            fetch_form.find('input').removeAttr('disabled');
+            fetch_form.find('button').removeAttr('disabled');
+        } else {
+            fetch_form.find('fieldset').attr('disabled', true);
+            fetch_form.find('input').attr('disabled', true);
+            fetch_form.find('button').attr('disabled', true);
+        }
+    }
+
+    function fetchSuccess(result) {
+        if (result.page >= total_pages) {
+            loop_state = false;
+            $('.result-ajax').html('<span class="glyphicon glyphicon-ok text-success"></span> Finish').append('<br><span class="js-bookmarks-scrapped">x</span> bookmarks scrapped');
+            toggleAbleForm();
+            updateData(result);
+        } else if (result.message == 'ok'){
+            updateData(result);
+        } else if (result.message == 'error') {
+            fetchError(result);
+            $('.result-ajax').html('');
+        }
+
+        if (loop_state) {
+            $('.result-ajax').html(loader + ' Scrapping page <span class="current-scrap">' + (parseInt(result.page) + 1) +'</span> / ' + total_pages);
+            fetchPage(user, parseInt(result.page) + 1);
+        } else {
+            console.log('loop_state', loop_state);
+            toggleAbleForm();
+            // $('.result-ajax').html('<span class="glyphicon glyphicon-indent-left"></span> Interrupted');
+        }
+    }
+
+    function fetchError(result) {
+        loop_state = false;
+        error_panel.html(result.errors.join('<br>'));
+        error_panel.removeClass('hidden');
+    }
+
+    function updateData(result) {
+        if (result.page == 1) {
+            total_pages = result.total_pages;
+        }
+        scrapped_bookmarks += result.bookmarks.length
+        $('.js-bookmarks-scrapped').text(scrapped_bookmarks);
+    }
+
+    function stopLoop() {
+        console.log('set to False');
+        loop_state = false;
+    }
+
+    function updateDisplay(result) {
+        switch(loop_state) {
+            case false:
+                break;
+            case 'initial':
+                break;
+            case 'scrap':
+                break;
+            case 'finish':
+                break;
+            case 'stop':
+                break;
+                break;
+            case 'error':
+                break;
+            default:
+        }
+    }
+
+    fetch_form.submit(function(e) {
+        event.preventDefault();
+
+        user = $(this).find('#username').val();
+
+        loop_state = true;
+        toggleAbleForm();
+
+        fetchPage(user);
+
+        $('.result-ajax').html(loader + ' Scrapping page <span class="current-scrap">1</span> / x').addClass('text-center h4');
+    });
+
+    $('.js-stoploop').on('click', function() {
+        stopLoop();
+    });
+
+
     $('.navbar .btn-download').on('click', function(e) {
         event.preventDefault();
         var type = $(this).attr('data-type');
         $('.form-download .input-type').val(type);
         $('.form-download').submit();
-    });
-
-    $('.btn-fetchall').click(function(){
-        function recursiveAjax(){
-            $.ajax({
-                url: 'ajax.php?username=jacknumber&page=' + counter,
-                dataType: 'json',
-                success: function(result){
-                    console.log(result);
-                    counter++;
-                    $('.current-scrap').text(counter);
-
-                    if (result.message == 'ok' && counter <= total_pages){
-                        recursiveAjax();
-                    } else if (result.message == 'error') {
-                        $('.result-ajax').html('<span class="glyphicon glyphicon-remove text-danger"></span> Error<br>' + result.errors.join('<br>'));
-                    } else if (counter >= total_pages) {
-                        $('.result-ajax').html('<span class="glyphicon glyphicon-ok text-success"></span> Finish');
-                    }
-                }
-            });
-        }
-
-        var loader = '<span class="glyphicon glyphicon-repeat loader"></span>',
-            counter = 1,
-            total_pages = <?php echo $scrap->total_pages ?>;
-
-        $('.bookmark').fadeOut();
-        $('.result-ajax').html(loader + ' Scrapping page <span class="current-scrap">1</span> / ' + total_pages).addClass('text-center h4');
-
-        recursiveAjax();
     });
 });
 </script>

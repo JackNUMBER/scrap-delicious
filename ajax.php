@@ -2,14 +2,11 @@
 const BASE_URL = 'https://del.icio.us';
 $return = [];
 
-class ScrapDelicious
+class ScrapDeliciousPage
 {
-    private $ajax;
-    private $output;
     public $username;
     public $page;
     public $total_pages;
-    public $warnings = [];
     public $errors = [];
     public $bookmarks = [];
     public $source_url = [];
@@ -29,14 +26,6 @@ class ScrapDelicious
             $this->page = $_GET['page'];
         }
 
-        if (isset($_GET['output'])) {
-            $this->output = $_GET['output'];
-        }
-
-        if (isset($_GET['ajax'])) {
-            $this->ajax = $_GET['ajax'];
-        }
-
         $args = '';
         if ($this->page && $this->page != 'all') {
             $args = [];
@@ -49,35 +38,40 @@ class ScrapDelicious
         $this->source_url = BASE_URL . '/' . $this->username . $args;
 
         if ($this->username) {
-            if ($this->ajax) {
-                $this->fetchDataAjax();
-            } else {
-                $this->fetchData();
-            }
+            $this->fetchData();
+        } else {
+            $this->errors[] = 'Username missing.';
+            return;
         }
     }
 
     public function fetchData()
     {
         if ($this->page == 'all') {
-
+            // old all pages scrap method
             for ($i = 1; $i <= $_GET['total']; $i++) {
                 $source_test = $this->source_url . '?page=' . $i;
                 $this->bookmarks = array_merge($this->bookmarks, $this->getPageData($source_test));
             }
         } else {
-            $headers = get_headers($this->source_url);
-            $http_code = substr($headers[0], 9, 3);
+            if ($this->page == 1) {
+                // test target website
+                $headers_site = @get_headers(BASE_URL);
+                if (strpos($headers_site[0],'200') === false) {
+                    $this->errors[] = 'Something went wrong with the Delicious website (' . BASE_URL .').';
+                    return;
+                }
 
-            if ($http_code != 200) {
-                $this->errors[] = 'The user <b>' . $this->username . '</b> doesn\'t exists or has been deleted.';
-                return;
+                // test target page
+                $headers_page = @get_headers($this->source_url);
+                if (strpos($headers_page[0],'200') === false) {
+                    $this->errors[] = 'The user <b>' . $this->username . '</b> doesn\'t exists or has been deleted.';
+                    return;
+                }
             }
 
             $this->bookmarks = array_merge($this->bookmarks, $this->getPageData($this->source_url));
         }
-
-        // var_dump($this->bookmarks);
     }
 
     private function getPageData($url)
@@ -119,7 +113,7 @@ class ScrapDelicious
     }
 }
 
-$scrap = new ScrapDelicious();
+$scrap = new ScrapDeliciousPage();
 $scrap->init();
 $errors = $scrap->errors;
 
@@ -131,6 +125,11 @@ if (!empty($errors)) {
 }
 
 $return['bookmarks'] = [];
+$return['page'] = $scrap->page;
+
+if ($scrap->page == 1) {
+    $return['total_pages'] = $scrap->total_pages;
+}
 
 foreach ($scrap->bookmarks as $bookmark) {
     $return['bookmarks'][] = [
