@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/flatly/bootstrap.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        .container, .bookmark {margin-top: 20px;}
+        .container {margin-top: 20px;}
         .loader {color: #c0c0c0;animation: loader 1s linear infinite;-webkit-transform: translateZ(0);}
         .btn-primary .loader {color: #fff;margin: 0;}
         .result-ajax .glyphicon {vertical-align: top;margin-right: 5px;}
@@ -17,7 +17,6 @@
 </head>
 <body>
 <div class="container">
-
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Scrap Delicious</h3>
@@ -35,7 +34,6 @@
         </div>
     </div>
 
-    <div class="alert alert-danger js-error-panel hidden" role="alert"></div>
     <div class="result-ajax">
         <!-- Scrapping -->
         <div class="js-state-scrap hidden text-center">
@@ -126,7 +124,7 @@ $(function () {
             $('.js-bookmarks-scrapped').text(scrapped_bookmarks);
 
             if (loop_state != 'stop') {
-                if (result.page >= total_pages) {
+                if (parseInt(result.page) >= total_pages) {
                     // end
                     loop_state = 'finish';
 
