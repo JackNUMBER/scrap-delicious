@@ -47,31 +47,23 @@ class ScrapDeliciousPage
 
     public function fetchData()
     {
-        if ($this->page == 'all') {
-            // old all pages scrap method
-            for ($i = 1; $i <= $_GET['total']; $i++) {
-                $source_test = $this->source_url . '?page=' . $i;
-                $this->bookmarks = array_merge($this->bookmarks, $this->getPageData($source_test));
-            }
-        } else {
-            if ($this->page == 1) {
-                // test target website
-                $headers_site = @get_headers(BASE_URL);
-                if (strpos($headers_site[0],'200') === false) {
-                    $this->errors[] = 'Something went wrong with the Delicious website (' . BASE_URL .').';
-                    return;
-                }
-
-                // test target page
-                $headers_page = @get_headers($this->source_url);
-                if (strpos($headers_page[0],'200') === false) {
-                    $this->errors[] = 'The user <b>' . $this->username . '</b> doesn\'t exists or has been deleted.';
-                    return;
-                }
+        if ($this->page == 1) {
+            // test target website
+            $headers_site = @get_headers(BASE_URL);
+            if (strpos($headers_site[0],'200') === false) {
+                $this->errors[] = 'Something went wrong with the Delicious website (' . BASE_URL .').';
+                return;
             }
 
-            $this->bookmarks = array_merge($this->bookmarks, $this->getPageData($this->source_url));
+            // test target page
+            $headers_page = @get_headers($this->source_url);
+            if (strpos($headers_page[0],'200') === false) {
+                $this->errors[] = 'The user <b>' . $this->username . '</b> doesn\'t exists or has been deleted.';
+                return;
+            }
         }
+
+        $this->bookmarks = array_merge($this->bookmarks, $this->getPageData($this->source_url));
     }
 
     private function getPageData($url)
@@ -109,7 +101,23 @@ class ScrapDeliciousPage
             ];
         }
 
+
+        $this->saveBookmarks($page_data);
+
         return $page_data;
+    }
+
+    private function saveBookmarks($page_data)
+    {
+        session_start();
+
+        if ($this->page == 1) {
+            session_unset();
+        }
+
+        $scrappedBookmarks = isset($_SESSION["scrappedBookmarks"]) && is_array($_SESSION["scrappedBookmarks"]) ? $_SESSION["scrappedBookmarks"] : [];
+
+        $_SESSION["scrappedBookmarks"] = array_merge($scrappedBookmarks, $page_data);
     }
 }
 
