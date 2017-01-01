@@ -27,7 +27,7 @@
                 <fieldset>
                     <div class="form-group">
                         <label for="username">Username</label>
-                        <input type="text" name="username" id="username" placeholder="eg: jacknumber" class="form-control" required value="jacknumber_graph">
+                        <input type="text" name="username" id="username" placeholder="eg: jacknumber" class="form-control" required>
                         <button type="submit" class="btn btn-primary">Fetch</button>
                     </div>
                 </fieldset>
