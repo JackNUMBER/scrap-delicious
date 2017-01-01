@@ -79,7 +79,7 @@
         <!-- Buttons -->
         <div class="download-buttons js-state-download hidden text-center">
             <button class="btn btn-primary js-btn-download" data-download-type="html1" rel="tooltip" data-placement="top" title="Pocket, instapaper">HTML Type 1</button>
-            <button class="btn btn-primary js-btn-download" data-download-type="html2" rel="tooltip" data-placement="top" title="Firefox, Raindrop, Xmarks, Booky, Bookmax">HTML Type 2</button>
+            <button class="btn btn-primary js-btn-download" data-download-type="html2" rel="tooltip" data-placement="top" title="Chrome, Firefox, Raindrop, Xmarks, Booky, Bookmax">HTML Type 2</button>
             <br><a href="https://github.com/JackNUMBER/scrap-delicious"><small>Need help?</a></small>
         </div>
     </div>
