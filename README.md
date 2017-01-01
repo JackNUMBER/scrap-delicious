@@ -1,5 +1,5 @@
 #Backup your favorites from Delicious
-This code help you to export your Delicious bookmarks in different file formats (only one at the moment :grimacing:).
+This code help you to export your Delicious bookmarks in different file formats.
 
 ##Why
 Because Delicious blocks the data exportation (to keep our customer of course...) then we need to find solution.
