@@ -101,7 +101,7 @@ $(function () {
         var current_page = page ? page : 1;
 
         $.ajax({
-            url: 'ajax.php?username=' + username + '&page=' + current_page,
+            url: 'scrap.php?username=' + username + '&page=' + current_page,
             dataType: 'json',
             success: function(result) {
                 console.log('success', result);
