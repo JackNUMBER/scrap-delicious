@@ -77,10 +77,10 @@
             <div>You have stopped the process but you can still download the <span class="js-bookmarks-scrapped">x</span> scrapped bookmarks:</div>
         </div>
         <!-- Buttons -->
-        <div class="download-buttons js-state-download js-download-buttons hidden text-center">
-            <button class="btn btn-primary js-btn-download" data-fetch-type="html1" rel="tooltip" data-placement="top" title="Firefox, Pocket">HTML Type 1</button>
-            <button class="btn btn-primary js-btn-download hidden" data-fetch-type="html2" rel="tooltip" data-placement="top" title="">HTML Type 2</button>
-            <button class="btn btn-primary js-btn-download hidden" data-fetch-type="json" rel="tooltip" data-placement="top" title="">JSON</button>
+        <div class="download-buttons js-state-download hidden text-center">
+            <button class="btn btn-primary js-btn-download" data-download-type="html1" rel="tooltip" data-placement="top" title="Firefox, Pocket">HTML Type 1</button>
+            <button class="btn btn-primary js-btn-download hidden" data-download-type="html2" rel="tooltip" data-placement="top" title="">HTML Type 2</button>
+            <button class="btn btn-primary js-btn-download hidden" data-download-type="json" rel="tooltip" data-placement="top" title="">JSON</button>
             <br><a href="https://github.com/JackNUMBER/scrap-delicious"><small>Need help?</a></small>
         </div>
     </div>
@@ -155,7 +155,6 @@ $(function () {
     }
 
     function toggleAbleForm() {
-        console.log('toggleAbleForm()');
         if (fetch_form.find('fieldset').attr('disabled')) {
             fetch_form.find('fieldset').removeAttr('disabled');
             fetch_form.find('input').removeAttr('disabled');
@@ -185,12 +184,12 @@ $(function () {
                 break;
             case 'finish':
                 $('.js-state-success').removeClass('hidden');
-                $('.js-download-buttons').removeClass('hidden');
+                $('.js-state-download').removeClass('hidden');
                 toggleAbleForm();
                 break;
             case 'stop':
                 $('.js-state-stop').removeClass('hidden');
-                $('.js-download-buttons').removeClass('hidden');
+                $('.js-state-download').removeClass('hidden');
                 toggleAbleForm();
                 break;
             case 'error':
@@ -201,7 +200,7 @@ $(function () {
         }
     }
 
-    fetch_form.submit(function(e) {
+    fetch_form.submit(function(event) {
         event.preventDefault();
 
         user = $(this).find('#username').val();
@@ -223,12 +222,10 @@ $(function () {
         stopLoop();
     });
 
-
-    $('.navbar .btn-download').on('click', function(e) {
+    $('.js-btn-download').on('click', function(event) {
         event.preventDefault();
-        var type = $(this).attr('data-type');
-        $('.form-download .input-type').val(type);
-        $('.form-download').submit();
+        var download_type = $(this).attr('data-download-type');
+        window.location = 'download.php?username=' + user + '&output=' + download_type;
     });
 });
 </script>

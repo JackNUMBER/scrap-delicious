@@ -1,5 +1,6 @@
 <?php
-$bookmarks = unserialize($_POST['bookmarks']);
+session_start();
+$bookmarks = isset($_SESSION["scrappedBookmarks"]) && is_array($_SESSION["scrappedBookmarks"]) ? $_SESSION["scrappedBookmarks"] : [];
 
 $html= [];
 $html[] = '<!DOCTYPE html>';
@@ -9,7 +10,7 @@ $html[] = '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 $html[] = '<title>Delicious Export - by Jack NUMBER</title>';
 $html[] = '</head>';
 $html[] = '<body>';
-$html[] = '<h1>Delicious ' . $_POST['username'] . '</h1>';
+$html[] = '<h1>Delicious ' . $_GET['username'] . '</h1>';
 $html[] = '<ul>';
 foreach ($bookmarks as $bookmark) {
     $html[] = '<li><a href="' . $bookmark['url'] . '" time_added="' . $bookmark['date'] . '" tags="' . implode(',', $bookmark['tags']) . '">' . $bookmark['title'] . '</a>';
