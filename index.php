@@ -4,11 +4,13 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/flatly/bootstrap.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
+        body {overflow: hidden;}
         .container {margin-top: 20px;}
         .loader {color: #c0c0c0;animation: loader 1s linear infinite;-webkit-transform: translateZ(0);}
         .btn-primary .loader {color: #fff;margin: 0;}
         .result-ajax .glyphicon {vertical-align: top;margin-right: 5px;}
         .download-buttons {margin-top: 15px;}
+        .fork {position: absolute;top: 35px;right: -55px;border: 0;padding-left: 50px;padding-right: 50px;transform: rotate(45deg);}
         @keyframes loader {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -27,8 +29,8 @@
                     <div class="form-group">
                         <label for="username">Username</label>
                         <input type="text" name="username" id="username" placeholder="eg: jacknumber" class="form-control" required>
-                        <button type="submit" class="btn btn-primary">Fetch</button>
                     </div>
+                    <button type="submit" class="btn btn-primary">Fetch</button>
                 </fieldset>
             </form>
         </div>
@@ -227,8 +229,7 @@ $(function () {
 });
 </script>
 
-<a href="https://github.com/JackNUMBER/scrap-delicious"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/a6677b08c955af8400f44c6298f40e7d19cc5b2d/68747470733a2f2f73332e616d6
-17a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png"></a>
+<a href="https://github.com/JackNUMBER/scrap-delicious" class="well well-sm fork">Fork me on Github</a>
 
 </body>
 </html>
