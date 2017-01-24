@@ -77,8 +77,8 @@ class ScrapDeliciousPage
 
         foreach ($items as $item) {
             $description = null;
-            if ($item->find('.thumbTBriefTxt', 0)->children(2)) {
-                $description = $item->find('.thumbTBriefTxt', 0)->children(2)->plaintext;
+            if ($item->find('.thumbTBriefTxt', 0)->children(1)) {
+                $description = $item->find('.thumbTBriefTxt', 0)->children(1)->plaintext;
             }
 
             $date = $item->find('.articleInfoPan', 0)->children(2)->plaintext;
